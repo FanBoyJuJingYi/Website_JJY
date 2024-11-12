@@ -1,12 +1,30 @@
 <?php 
 require_once('files/functions.php');
 protected_area();
+$rows = db_select('categories', 'parent_id = 0');
+$categories = [];
+$categories[0] = 'No Parent';
+foreach($rows as $val){
+  $categories[$val['id']] = $val['name'];
+}
+
 if($_SERVER['REQUEST_METHOD'] == 'POST'){
   $_SESSION['form']['value'] = $_POST;
-  $_SESSION['form']['error'] = [];
-  $_SESSION['form']['error']['name'] = "Name too short";
- header('location:admin-categories.php');
- die();
+  $imgs = upload_images($_FILES);
+  $data['name'] = $_POST['name'];
+  $data['description'] = $_POST['description'];
+  $data['photo'] = json_encode($imgs);
+  $data['parent_id'] = 0;
+  if(db_insert('categories', $data)){
+      alert('success', 'Category created successfully');
+      header('location:admin-categories.php');
+      unset($_SESSION['form']);
+    }else {
+      alert('danger', 'Failed to create category, please try again');
+      header('location:admin-categories-add.php');
+    }
+    die();
+
 }
 require_once('files/header.php');
       
@@ -56,13 +74,31 @@ require_once('files/header.php');
                       'name' => 'name',
                     ]); ?>
                     <div class="row mt-4">
-                        <div class="col-12">
+                        <div class="col-md-6">
                           <div class="form-group">
-                            <label for="photo"> Catagory image</label>
+                          <?= select_input([
+                      'name' => 'Parent_id',
+                      'label' => 'Parent category',
+                    ],$categories
+                    ); ?> 
+                          </div>
+                        </div>
+                        <div class="col-md-6">
+                          <div class="form-group">
+                            <label for="photo">Catagory image</label>
                             <input class="form-control" name="photo" type="file" accept=".jpg,.jpeg,.png">
                           </div>
                         </div>
                     </div>
+                    <div class="row mt-3">
+                      <div class=col-12>
+                        <div class="form-group">
+                          <label for="description">Description</label>
+                          <textarea class="form-control" name="description" id="description"></textarea>
+                        </div>
+                      </div>
+                    </div>
+
                   </div>
                   <button class="btn btn-primary d-block w-100" type="submit"><i class="ci-cloud-upload fs-lg me-2"></i>Upload Product</button>
                 </form>
@@ -70,5 +106,6 @@ require_once('files/header.php');
             </section>
         </div>
       </div>
+
 
 <?php require_once('files/footer.php'); ?>
